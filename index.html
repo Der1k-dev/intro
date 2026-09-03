@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>STAR WARS RP - Завантаження</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        width: 100%; height: 100%;
+        background: #08080e;
+        overflow: hidden;
+        font-family: 'Segoe UI', 'Consolas', monospace;
+        color: #e8eaee;
+    }
+
+    /* --- Фон: сітка + зорі --- */
+    .bg {
+        position: fixed; inset: 0;
+        background-image:
+            linear-gradient(rgba(255,140,40,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,140,40,0.05) 1px, transparent 1px);
+        background-size: 46px 46px;
+        z-index: 0;
+    }
+    .stars {
+        position: fixed; inset: 0;
+        z-index: 0;
+        background-repeat: repeat;
+        opacity: 0.5;
+    }
+    .stars span {
+        position: absolute;
+        width: 2px; height: 2px;
+        background: #fff;
+        border-radius: 50%;
+        opacity: 0.5;
+        animation: twinkle 3s ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.8; } }
+
+    .vignette {
+        position: fixed; inset: 0; z-index: 1;
+        background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%);
+        pointer-events: none;
+    }
+
+    /* --- Кутові дужки --- */
+    .bracket {
+        position: fixed;
+        width: 70px; height: 70px;
+        border: 2px solid #ff8c28;
+        z-index: 2;
+        opacity: 0.9;
+    }
+    .bracket.tl { top: 26px; left: 26px; border-right: none; border-bottom: none; }
+    .bracket.tr { top: 26px; right: 26px; border-left: none; border-bottom: none; }
+    .bracket.bl { bottom: 90px; left: 26px; border-right: none; border-top: none; }
+    .bracket.br { bottom: 90px; right: 26px; border-left: none; border-top: none; }
+
+    /* --- Лого + слоган --- */
+    .brand {
+        position: fixed; left: 60px; bottom: 130px; z-index: 3;
+        max-width: 640px;
+    }
+    .brand img {
+        max-width: 460px;
+        filter: drop-shadow(0 0 24px rgba(255,140,40,0.35));
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.3s;
+    }
+    .tagline {
+        margin-top: 18px;
+        font-size: 16px;
+        letter-spacing: 3px;
+        color: #9aa2ad;
+        text-transform: uppercase;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.6s;
+    }
+    .tagline b { color: #ff8c28; }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Термінальний лог справа --- */
+    .terminal {
+        position: fixed; top: 60px; right: 60px; z-index: 3;
+        width: 420px;
+        font-size: 13px;
+        letter-spacing: 1px;
+    }
+    .terminal .head {
+        color: #ff8c28;
+        font-weight: bold;
+        margin-bottom: 14px;
+        display: flex; justify-content: space-between;
+    }
+    .terminal .line {
+        display: flex; justify-content: space-between;
+        color: #7c8592;
+        padding: 3px 0;
+        opacity: 0;
+        animation: fadeIn 0.4s ease forwards;
+    }
+    .terminal .line .ok { color: #6fdc82; }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* --- Картка гравця --- */
+    .playercard {
+        position: fixed; top: 250px; right: 60px; z-index: 3;
+        width: 420px;
+        background: rgba(16,20,28,0.85);
+        border: 1px solid #3c4655;
+        border-left: 3px solid #ff8c28;
+        padding: 18px 20px;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards 1.4s;
+    }
+    .playercard .label { color: #ff8c28; font-size: 12px; letter-spacing: 2px; margin-bottom: 6px; }
+    .playercard .name { font-size: 26px; font-weight: bold; color: #fff; margin-bottom: 14px; word-break: break-all; }
+    .playercard .row { display: flex; justify-content: space-between; font-size: 13px; color: #9aa2ad; padding: 3px 0; }
+    .playercard .row b { color: #e8eaee; }
+
+    /* --- Нижній статус-бар --- */
+    .statusbar {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
+        height: 66px;
+        background: rgba(8,8,14,0.92);
+        border-top: 2px solid #ff8c28;
+        display: flex; align-items: center;
+        padding: 0 40px;
+    }
+    .statusbar .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #ff8c28;
+        margin-right: 12px;
+        animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .statusbar .text { flex: 1; font-size: 14px; letter-spacing: 1px; color: #c7cbd1; }
+    .statusbar .pct { font-size: 16px; font-weight: bold; color: #ff8c28; min-width: 60px; text-align: right; }
+
+    .progresstrack {
+        position: fixed; left: 0; right: 0; bottom: 66px; height: 3px; z-index: 3;
+        background: rgba(255,255,255,0.06);
+    }
+    .progressfill {
+        height: 100%; width: 0%;
+        background: linear-gradient(90deg, #ff8c28, #ffb35c);
+        box-shadow: 0 0 12px rgba(255,140,40,0.6);
+        transition: width 0.3s ease;
+    }
+</style>
+</head>
+<body>
+
+    <div class="bg"></div>
+    <div class="stars" id="stars"></div>
+    <div class="vignette"></div>
+
+    <div class="bracket tl"></div>
+    <div class="bracket tr"></div>
+    <div class="bracket bl"></div>
+    <div class="bracket br"></div>
+
+    <div class="brand">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAACACAYAAACbUtgKAAAdKElEQVR4nO3deXRU1eEH8O8smclMdshCNlAkkABCEgSFUlCqpHWjFrWbbe1mpVa6+atCPT9qN5faBXtaoafFtSogHrWoPylYF6BA2PcdEkI2spLMJJPZfn+8zGQymeW+mTeZycz3c05PTebNfXfefS/z5d777lNBIXMX3uVUqiwiIiIiihyVEoXMXXiXc+9/tyhRFBERERFFmDrcAhj+iIiIiEaWsAIgwx8RERHRyBNyAGT4IyIiIhqZQgqADH9EREREI5fsAMjwR0RERDSyyQqADH9EREREI59wAGT4IyIiIooPQgGQ4Y+IiIgofgQNgAx/RERERPElYABk+CMiIiKKP34DIMMfERERUXzyGQAZ/oiIiIji15AAyPBHREREFN8GBUCGPyIiIqL45w6ADH9EREREiUENMPwRERERJRKV8+lSp78XUx5rHs66EBEREdEwkPUsYCIiIiIa+RgAiYiIiBIMAyARERFRgmEAJCIiIkowDIBERERECYYBkIiIiCjBMAASERERJRgGQCIiIqIEwwBIRERElGAYAImIiIgSDAMgERERUYJhACQiIiJKMAyARERERAmGAZCIiIgowTAAEhERESUYBkAiIiKiBMMASERERJRgGACJiIiIEgwDIBEREVGCYQAkIiIiSjAMgEREREQJhgGQiIiIKMEwABIRERElGAZAIiIiogTDAEhERESUYBgAiYiIiBKMNtoV8JaSkoKJE0swbtwVSEtLRUpKKnQ6HaxWKywWC7q6LuPy5S60traiqakJzc3NsFgs0a42UUzjdUVERJ5iIgCOGTMGixd/AbfddjtKSydBpVLJen9LSwsuXKhDbW0NTp06jQ0bXkd9fQNqas5HpsIAxo27YtDPy5Y9gvvvvz/k8k6ePImbblro9/VQPktfXx9MJhPMZjMuXWrB6dOncfr0aWzbtg0HDx4Mua4uJSUl2Lz530Lb/vKXv8Q//rHG/fMNN9yA559/Tnhfjz/+BFatWuX+Wc7xmD17NurrGwb9LhHaK1LXlahoHAO5+7TZbDCZTDCZzOjs7MS5c2dx6tQpHDp0GB9//DFDMBHFragGQK1WiyVL7scDDzwAg8EQcjnZ2dnIzs5GRUU5AODo0aOyvqiUUFFRGdb7S0pKkJaWhq6u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" alt="STAR WARS RP">
+        <div class="tagline">Грай. <b>Досліджуй.</b> Насолоджуйся.</div>
+    </div>
+
+    <div class="terminal" id="terminal">
+        <div class="head"><span>SYS::CONNECT</span><span id="serverAddr">...</span></div>
+    </div>
+
+    <div class="playercard">
+        <div class="label">ГРАВЕЦЬ / PLAYER</div>
+        <div class="name" id="playerName">Guest</div>
+        <div class="row"><span>SteamID</span><b id="playerSteamId">-</b></div>
+        <div class="row"><span>Карта</span><b id="mapName">-</b></div>
+        <div class="row"><span>Гравців</span><b id="maxPlayers">-</b></div>
+    </div>
+
+    <div class="progresstrack"><div class="progressfill" id="progressFill"></div></div>
+    <div class="statusbar">
+        <div class="dot"></div>
+        <div class="text" id="statusText">Ініціалізація...</div>
+        <div class="pct" id="statusPct">0%</div>
+    </div>
+
+<script>
+    // --- Зорі ---
+    var starsEl = document.getElementById('stars');
+    for (var i = 0; i < 60; i++) {
+        var s = document.createElement('span');
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 100 + '%';
+        s.style.animationDelay = (Math.random() * 3) + 's';
+        starsEl.appendChild(s);
+    }
+
+    // --- Параметри з URL. ВАЖЛИВО: GMod передає лише %s (SteamID64)
+    // і %m (назва карти) - ІМ'Я гравця так передати не можна, бо
+    // LocalPlayer():Nick() існує лише всередині Lua-рушія, а ця
+    // сторінка - звичайний окремий HTML, доступу до гри не має.
+    // Показуємо SteamID (єдине, що реально прийде), нік - ні.
+    var params = new URLSearchParams(window.location.search);
+    var steamId = params.get('steamid') || params.get('SteamId') || '';
+    var mapParam = params.get('map') || params.get('Map') || '';
+
+    if (steamId) {
+        document.getElementById('playerName').textContent = 'STEAM_' + steamId.slice(-6);
+        document.getElementById('playerSteamId').textContent = steamId;
+    }
+    if (mapParam) {
+        document.getElementById('mapName').textContent = mapParam;
+    }
+
+    // --- Термінальний лог - послідовна анімація рядків ---
+    var logLines = [
+        ['HANDSHAKE', 'OK'],
+        ['AUTH / STEAM SESSION', 'OK'],
+        ['WORKSHOP CONTENT', 'LOADING'],
+        ['GAMEMODE STAR WARS RP', 'MOUNTED'],
+        ['SPAWN POINT', 'RESERVED'],
+        ['CHARACTER DATA', 'SYNCING'],
+        ['WORLD STREAM', 'ACTIVE'],
+    ];
+    var termEl = document.getElementById('terminal');
+    logLines.forEach(function (item, idx) {
+        var row = document.createElement('div');
+        row.className = 'line';
+        row.style.animationDelay = (0.3 + idx * 0.22) + 's';
+        row.innerHTML = '<span>&gt; ' + item[0] + '</span><span class="ok">[' + item[1] + ']</span>';
+        termEl.appendChild(row);
+    });
+
+    // --- Прогрес: справжні дані від GMod, якщо є, інакше плавна
+    // імітація (щоб екран не виглядав "зламаним", якщо колбеки
+    // з якоїсь причини не прийдуть).
+    var filesTotal = 0, filesDone = 0;
+    var fillEl = document.getElementById('progressFill');
+    var textEl = document.getElementById('statusText');
+    var pctEl = document.getElementById('statusPct');
+
+    function setProgress(pct, text) {
+        pct = Math.max(0, Math.min(100, pct));
+        fillEl.style.width = pct + '%';
+        pctEl.textContent = Math.round(pct) + '%';
+        if (text) textEl.textContent = text;
+    }
+
+    // --- Офіційні колбеки GMod (викликаються рушієм напряму) ---
+    window.GameDetails = function (servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
+        document.getElementById('mapName').textContent = mapname || '-';
+        document.getElementById('maxPlayers').textContent = maxplayers || '-';
+        document.getElementById('serverAddr').textContent = servername || '';
+        if (steamid) {
+            document.getElementById('playerName').textContent = 'STEAM_' + String(steamid).slice(-6);
+            document.getElementById('playerSteamId').textContent = steamid;
+        }
+        setProgress(5, 'З\'єднання встановлено...');
+    };
+
+    window.SetFilesTotal = function (total) {
+        filesTotal = total || 0;
+        filesDone = 0;
+        setProgress(filesTotal > 0 ? 5 : 30, 'Завантаження файлів: 0 / ' + filesTotal);
+    };
+
+    window.DownloadingFile = function (filename) {
+        textEl.textContent = 'Завантаження: ' + filename;
+    };
+
+    window.FileDownloaded = function () {
+        filesDone++;
+        if (filesTotal > 0) {
+            var pct = 5 + (filesDone / filesTotal) * 90;
+            setProgress(pct, 'Завантаження файлів: ' + filesDone + ' / ' + filesTotal);
+        }
+    };
+
+    // --- Фолбек-анімація (на випадок відсутності реальних колбеків -
+    // напр. якщо всі файли вже завантажені і GMod їх не викликає) ---
+    var fakeProgress = 0;
+    var fakeInterval = setInterval(function () {
+        if (filesTotal > 0) { clearInterval(fakeInterval); return; } // реальні дані вже йдуть
+        fakeProgress += Math.random() * 6;
+        if (fakeProgress >= 96) { fakeProgress = 96; clearInterval(fakeInterval); }
+        setProgress(fakeProgress, 'Синхронізація світу...');
+    }, 260);
+</script>
+
+</body>
+</html>
