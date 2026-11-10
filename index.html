@@ -1,296 +1,691 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<title>STAR WARS RP - Завантаження</title>
+<meta charset="utf-8">
+<title>Завантаження</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* ПАЛІТРА
+     білий (броня клонів)      #f4f6fa
+     червоний (Республіка)     #c0202b
+     синій (501-й легіон)      #2e6fe0
+     оранжевий (212-й)         #ff9a1f
+     жовтий (327-й)            #f2c230
+     сірий (104-й)             #8b95a5
+     блакитний (голограма)     #8fd8ff
 
-    html, body {
-        width: 100%; height: 100%;
-        background: #08080e;
-        overflow: hidden;
-        font-family: 'Segoe UI', 'Consolas', monospace;
-        color: #e8eaee;
-    }
+     РОЗМІРИ ЕКРАНА
+     Уся сцена намальована в координатах 1920x1080 (блок #stage) і цілком масштабується
+     під будь-який екран скриптом (функція layout). Тому всі розміри нижче в пікселях сцени. */
+  html, body {
+    margin: 0; height: 100%; background: #000; color: #f4f6fa; overflow: hidden; cursor: default;
+    font-family: Consolas, "Lucida Console", "Courier New", monospace;
+    -webkit-user-select: none; user-select: none;
+  }
+  #wrap { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; }
 
-    /* --- Фон: сітка + зорі --- */
-    .bg {
-        position: fixed; inset: 0;
-        background-image:
-            linear-gradient(rgba(255,140,40,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,140,40,0.05) 1px, transparent 1px);
-        background-size: 46px 46px;
-        z-index: 0;
-    }
-    .stars {
-        position: fixed; inset: 0;
-        z-index: 0;
-        background-repeat: repeat;
-        opacity: 0.5;
-    }
-    .stars span {
-        position: absolute;
-        width: 2px; height: 2px;
-        background: #fff;
-        border-radius: 50%;
-        opacity: 0.5;
-        animation: twinkle 3s ease-in-out infinite;
-    }
-    @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.8; } }
+  /* сцена 1920x1080, центрується і масштабується */
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    margin-left: -960px; margin-top: -540px;
+    -webkit-transform-origin: 50% 50%; transform-origin: 50% 50%;
+  }
 
-    .vignette {
-        position: fixed; inset: 0; z-index: 1;
-        background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%);
-        pointer-events: none;
-    }
+  /* похилена площина: на ній лежить усе. Вона значно більша за сцену,
+     щоб закривати і широкі (21:9), і високі (4:3, 5:4) екрани */
+  #plane {
+    position: absolute; left: -1640px; top: -2460px; width: 5200px; height: 3700px;
+    -webkit-transform-origin: 2600px 3000px; transform-origin: 2600px 3000px;
+    -webkit-transform: perspective(900px) rotateX(40deg) rotateZ(-7deg);
+            transform: perspective(900px) rotateX(40deg) rotateZ(-7deg);
+  }
+  /* фон складається з 36 невеликих полотен (6x6), а не з одного величезного:
+     велике розтягнуте полотно деякі відеокарти й телефони обрізають */
+  #data { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: .85; }
+  #data canvas { position: absolute; width: 16.7%; height: 16.7%; display: block; }
 
-    /* --- Кутові дужки --- */
-    .bracket {
-        position: fixed;
-        width: 70px; height: 70px;
-        border: 2px solid #ff8c28;
-        z-index: 2;
-        opacity: 0.9;
-    }
-    .bracket.tl { top: 26px; left: 26px; border-right: none; border-bottom: none; }
-    .bracket.tr { top: 26px; right: 26px; border-left: none; border-bottom: none; }
-    .bracket.bl { bottom: 90px; left: 26px; border-right: none; border-top: none; }
-    .bracket.br { bottom: 90px; right: 26px; border-left: none; border-top: none; }
+  /* рамка зі службовими мітками, теж на площині (точка 2600,3000 площини = центр сцени) */
+  #frame {
+    position: absolute; left: 2600px; top: 3000px; width: 1229px; height: 1123px;
+    margin-left: -614px; margin-top: -756px;
+  }
+  .corner { position: absolute; width: 43px; height: 43px; border: 0 solid #c0202b; }
+  #c1 { left: 0; top: 0; border-left-width: 3px; border-top-width: 3px; }
+  #c2 { right: 0; top: 0; border-right-width: 3px; border-top-width: 3px; }
+  #c3 { left: 0; bottom: 0; border-left-width: 3px; border-bottom-width: 3px; }
+  #c4 { right: 0; bottom: 0; border-right-width: 3px; border-bottom-width: 3px; }
+  .tag { position: absolute; top: 22px; font-size: 19px; letter-spacing: .2em; white-space: nowrap; color: #8fd8ff; text-shadow: 0 0 8px rgba(46,111,224,.9); }
+  #tl { left: 38px; }
+  #tr { right: 38px; text-align: right; }
+  #clock { color: #f4f6fa; }
+  #feed { position: absolute; left: 29px; bottom: 16px; width: 730px; font-size: 14px; line-height: 20px; color: #8b95a5; letter-spacing: .08em; }
+  #feed div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #count { position: absolute; right: 29px; bottom: 16px; font-size: 16px; letter-spacing: .25em; color: #f2c230; }
 
-    /* --- Лого + слоган --- */
-    .brand {
-        position: fixed; left: 60px; bottom: 130px; z-index: 3;
-        max-width: 640px;
-    }
-    .brand img {
-        max-width: 460px;
-        filter: drop-shadow(0 0 24px rgba(255,140,40,0.35));
-        opacity: 0;
-        animation: fadeUp 0.8s ease forwards 0.3s;
-    }
-    .tagline {
-        margin-top: 18px;
-        font-size: 16px;
-        letter-spacing: 3px;
-        color: #9aa2ad;
-        text-transform: uppercase;
-        opacity: 0;
-        animation: fadeUp 0.8s ease forwards 0.6s;
-    }
-    .tagline b { color: #ff8c28; }
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(14px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
+  /* головний блок з текстом */
+  #onplane {
+    position: absolute; left: 2600px; top: 3000px; width: 1344px; margin-left: -672px; margin-top: -378px;
+    padding: 54px 0 43px;
+    background: -webkit-radial-gradient(center, ellipse, rgba(0,0,0,.65) 0%, rgba(0,0,0,.4) 50%, rgba(0,0,0,0) 72%);
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.65) 0%, rgba(0,0,0,.4) 50%, rgba(0,0,0,0) 72%);
+  }
+  #center { position: relative; text-align: center; }
+  #label { font-size: 17px; letter-spacing: .5em; color: #8fd8ff; margin-bottom: 16px; }
+  #titlebox { position: relative; height: 173px; }
+  .title {
+    position: absolute; left: 0; right: 0; top: 0; margin: 0;
+    font-family: Impact, "Arial Narrow Bold", "Arial Black", sans-serif;
+    font-size: 140px; line-height: 173px; font-style: italic; text-transform: uppercase;
+    letter-spacing: .04em; white-space: nowrap;
+  }
+  #t0 { color: #f4f6fa; text-shadow: 4px 4px 0 #c0202b, -3px -2px 0 #2e6fe0, 0 0 34px rgba(46,111,224,.85); }
+  #t1 { color: #5fa0ff; opacity: 0; }
+  #t2 { color: #ff3b47; opacity: 0; }
 
-    /* --- Термінальний лог справа --- */
-    .terminal {
-        position: fixed; top: 60px; right: 60px; z-index: 3;
-        width: 420px;
-        font-size: 13px;
-        letter-spacing: 1px;
-    }
-    .terminal .head {
-        color: #ff8c28;
-        font-weight: bold;
-        margin-bottom: 14px;
-        display: flex; justify-content: space-between;
-    }
-    .terminal .line {
-        display: flex; justify-content: space-between;
-        color: #7c8592;
-        padding: 3px 0;
-        opacity: 0;
-        animation: fadeIn 0.4s ease forwards;
-    }
-    .terminal .line .ok { color: #6fdc82; }
-    @keyframes fadeIn { to { opacity: 1; } }
+  /* смужки легіонів під назвою */
+  #stripes { margin-top: 13px; height: 11px; }
+  #stripes i {
+    display: inline-block; width: 96px; height: 11px; margin: 0 5px;
+    -webkit-transform: skewX(-25deg); transform: skewX(-25deg);
+  }
+  #info { margin-top: 22px; font-size: 18px; letter-spacing: .2em; color: #8b95a5; text-shadow: 0 0 6px #000, 0 0 6px #000; }
+  #info span.item { display: inline-block; margin: 0 29px; }
+  #info b { font-weight: normal; color: #f4f6fa; }
 
-    /* --- Картка гравця --- */
-    .playercard {
-        position: fixed; top: 250px; right: 60px; z-index: 3;
-        width: 420px;
-        background: rgba(16,20,28,0.85);
-        border: 1px solid #3c4655;
-        border-left: 3px solid #ff8c28;
-        padding: 18px 20px;
-        opacity: 0;
-        animation: fadeUp 0.6s ease forwards 1.4s;
-    }
-    .playercard .label { color: #ff8c28; font-size: 12px; letter-spacing: 2px; margin-bottom: 6px; }
-    .playercard .name { font-size: 26px; font-weight: bold; color: #fff; margin-bottom: 14px; word-break: break-all; }
-    .playercard .row { display: flex; justify-content: space-between; font-size: 13px; color: #9aa2ad; padding: 3px 0; }
-    .playercard .row b { color: #e8eaee; }
+  /* прогрес */
+  #prog { position: relative; margin: 65px 77px 0; text-align: center; }
+  #line { height: 3px; background: rgba(244,246,250,.2); position: relative; }
+  #fill {
+    position: absolute; left: 0; top: 0; height: 3px; width: 0%;
+    background: -webkit-linear-gradient(left, #2e6fe0, #8fd8ff);
+    background: linear-gradient(to right, #2e6fe0, #8fd8ff);
+    box-shadow: 0 0 12px 2px rgba(46,111,224,.95);
+  }
+  #head { position: absolute; top: -6px; width: 3px; height: 15px; background: #fff; left: 0%; box-shadow: 0 0 10px 3px #8fd8ff; }
+  #btn {
+    display: inline-block; margin-top: 32px; padding: 9px 31px; border: 1px solid #f4f6fa;
+    background: rgba(0,0,0,.75); font-size: 20px; letter-spacing: .3em; color: #f4f6fa;
+  }
+  #pct { color: #fff; background: #c0202b; padding: 0 12px; margin: 0 8px; letter-spacing: .05em; }
+  #file { margin-top: 15px; font-size: 16px; letter-spacing: .1em; color: #ff9a1f; height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 4px #000; }
 
-    /* --- Нижній статус-бар --- */
-    .statusbar {
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
-        height: 66px;
-        background: rgba(8,8,14,0.92);
-        border-top: 2px solid #ff8c28;
-        display: flex; align-items: center;
-        padding: 0 40px;
-    }
-    .statusbar .dot {
-        width: 8px; height: 8px; border-radius: 50%;
-        background: #ff8c28;
-        margin-right: 12px;
-        animation: pulse 1.2s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-    .statusbar .text { flex: 1; font-size: 14px; letter-spacing: 1px; color: #c7cbd1; }
-    .statusbar .pct { font-size: 16px; font-weight: bold; color: #ff8c28; min-width: 60px; text-align: right; }
+  /* уривок бортового журналу під смужкою прогресу */
+  #lore { margin-top: 30px; height: 24px; font-size: 17px; letter-spacing: .14em; color: #8fd8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 6px #000, 0 0 6px #000; }
 
-    .progresstrack {
-        position: fixed; left: 0; right: 0; bottom: 66px; height: 3px; z-index: 3;
-        background: rgba(255,255,255,0.06);
-    }
-    .progressfill {
-        height: 100%; width: 0%;
-        background: linear-gradient(90deg, #ff8c28, #ffb35c);
-        box-shadow: 0 0 12px rgba(255,140,40,0.6);
-        transition: width 0.3s ease;
-    }
+  /* плавна поява блоків на старті */
+  .fade { opacity: 0; -webkit-transition: opacity .7s; transition: opacity .7s; }
+  .fade.on { opacity: 1; }
+  #streaks { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; }
+  #flash { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: #fff; opacity: 0; pointer-events: none; }
+
+  /* світлові смуги, подряпини, затемнення країв: на весь екран, у відсотках */
+  .streak { position: absolute; left: -20%; width: 140%; pointer-events: none; -webkit-transform: rotate(-4deg); transform: rotate(-4deg); }
+  .scratch { position: absolute; height: 1px; background: rgba(244,246,250,.5); pointer-events: none; }
+  #shade {
+    position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none;
+    background: -webkit-radial-gradient(center, ellipse, rgba(0,0,0,.25) 0%, rgba(0,0,0,.15) 45%, rgba(0,0,0,.9) 100%);
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.25) 0%, rgba(0,0,0,.15) 45%, rgba(0,0,0,.9) 100%);
+  }
+  #slice { position: absolute; left: 0; right: 0; height: 0; pointer-events: none; }
+  #scan {
+    position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none;
+    background-image: -webkit-repeating-linear-gradient(top, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.3) 3px);
+    background-image: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.3) 3px);
+  }
 </style>
 </head>
 <body>
+<div id="wrap">
+  <div id="stage">
+    <div id="plane">
+      <div id="data"></div>
 
-    <div class="bg"></div>
-    <div class="stars" id="stars"></div>
-    <div class="vignette"></div>
+      <div id="frame" class="fade">
+        <div class="corner" id="c1"></div><div class="corner" id="c2"></div>
+        <div class="corner" id="c3"></div><div class="corner" id="c4"></div>
+        <div class="tag" id="tl">ВЕЛИКА АРМІЯ РЕСПУБЛІКИ // АВАРІЙНИЙ КАНАЛ</div>
+        <div class="tag" id="tr">НЕВІДОМІ РЕГІОНИ <span id="clock">00:00:00</span></div>
+        <div id="feed"></div>
+        <div id="count"></div>
+      </div>
 
-    <div class="bracket tl"></div>
-    <div class="bracket tr"></div>
-    <div class="bracket bl"></div>
-    <div class="bracket br"></div>
-
-    <div class="brand">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAACACAYAAACbUtgKAAAdKElEQVR4nO3deXRU1eEH8O8smclMdshCNlAkkABCEgSFUlCqpHWjFrWbbe1mpVa6+atCPT9qN5faBXtaoafFtSogHrWoPylYF6BA2PcdEkI2spLMJJPZfn+8zGQymeW+mTeZycz3c05PTebNfXfefS/z5d777lNBIXMX3uVUqiwiIiIiihyVEoXMXXiXc+9/tyhRFBERERFFmDrcAhj+iIiIiEaWsAIgwx8RERHRyBNyAGT4IyIiIhqZQgqADH9EREREI5fsAMjwR0RERDSyyQqADH9EREREI59wAGT4IyIiIooPQgGQ4Y+IiIgofgQNgAx/RERERPElYABk+CMiIiKKP34DIMMfERERUXzyGQAZ/oiIiIji15AAyPBHREREFN8GBUCGPyIiIqL45w6ADH9EREREiUENMPwRERERJRKV8+lSp78XUx5rHs66EBEREdEwkPUsYCIiIiIa+RgAiYiIiBIMAyARERFRgmEAJCIiIkowDIBERERECYYBkIiIiCjBMAASERERJRgGQCIiIqIEwwBIRERElGAYAImIiIgSDAMgERERUYJhACQiIiJKMAyARERERAmGAZCIiIgowTAAEhERESUYBkAiIiKiBMMASERERJRgGACJiIiIEgwDIBEREVGCYQAkIiIiSjAMgEREREQJhgGQiIiIKMEwABIRERElGAZAIiIiogTDAEhERESUYBgAiYiIiBKMNtoV8JaSkoKJE0swbtwVSEtLRUpKKnQ6HaxWKywWC7q6LuPy5S60traiqakJzc3NsFgs0a42UUzjdUVERJ5iIgCOGTMGixd/AbfddjtKSydBpVLJen9LSwsuXKhDbW0NTp06jQ0bXkd9fQNqas5HpsIAxo27YtDPy5Y9gvvvvz/k8k6ePImbblro9/VQPktfXx9MJhPMZjMuXWrB6dOncfr0aWzbtg0HDx4Mua4uJSUl2Lz530Lb/vKXv8Q//rHG/fMNN9yA559/Tnhfjz/+BFatWuX+Wc7xmD17NurrGwb9LhHaK1LXlahoHAO5+7TZbDCZTDCZzOjs7MS5c2dx6tQpHDp0GB9//DFDMBHFragGQK1WiyVL7scDDzwAg8EQcjnZ2dnIzs5GRUU5AODo0aOyvqiUUFFRGdb7S0pKkJaWhq6u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" alt="STAR WARS RP">
-        <div class="tagline">Грай. <b>Досліджуй.</b> Насолоджуйся.</div>
+      <div id="onplane" class="fade">
+        <div id="center">
+          <div id="label">ІДЕНТИФІКАЦІЯ</div>
+          <div id="titlebox">
+            <div class="title" id="t2"></div>
+            <div class="title" id="t1"></div>
+            <div class="title" id="t0"></div>
+          </div>
+          <div id="stripes">
+            <i style="background:#2e6fe0"></i><i style="background:#ff9a1f"></i><i style="background:#c0202b"></i><i style="background:#f2c230"></i><i style="background:#8b95a5"></i>
+          </div>
+          <div id="info">
+            <span class="item">КАРТА <b id="map">---</b></span>
+            <span class="item">ЕКІПАЖ <b id="slots">---</b></span>
+            <span class="item">НОМЕР <b id="sid">---</b></span>
+          </div>
+        </div>
+        <div id="prog">
+          <div id="line"><div id="fill"></div><div id="head"></div></div>
+          <div id="btn">ВІДНОВЛЕННЯ СИСТЕМ <span id="pct">0%</span></div>
+          <div id="file">ОЧІКУВАННЯ ДАНИХ</div>
+          <div id="lore"></div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="terminal" id="terminal">
-        <div class="head"><span>SYS::CONNECT</span><span id="serverAddr">...</span></div>
-    </div>
-
-    <div class="playercard">
-        <div class="label">ГРАВЕЦЬ / PLAYER</div>
-        <div class="name" id="playerName">Guest</div>
-        <div class="row"><span>SteamID</span><b id="playerSteamId">-</b></div>
-        <div class="row"><span>Карта</span><b id="mapName">-</b></div>
-        <div class="row"><span>Гравців</span><b id="maxPlayers">-</b></div>
-    </div>
-
-    <div class="progresstrack"><div class="progressfill" id="progressFill"></div></div>
-    <div class="statusbar">
-        <div class="dot"></div>
-        <div class="text" id="statusText">Ініціалізація...</div>
-        <div class="pct" id="statusPct">0%</div>
-    </div>
+  <div id="streaks" class="fade"></div>
+  <div id="shade"></div>
+  <div id="slice"></div>
+  <div id="flash"></div>
+  <div id="scan"></div>
+</div>
 
 <script>
-    // --- Зорі ---
-    var starsEl = document.getElementById('stars');
-    for (var i = 0; i < 60; i++) {
-        var s = document.createElement('span');
-        s.style.left = Math.random() * 100 + '%';
-        s.style.top = Math.random() * 100 + '%';
-        s.style.animationDelay = (Math.random() * 3) + 's';
-        starsEl.appendChild(s);
+// ====== НАЛАШТУВАННЯ ======
+var DEFAULT_TITLE = "ЗВ'ЯЗОК...";
+var FEED_LINES = 4;        // рядків у стрічці подій
+var GLITCH_POWER = 1;      // 0 = без глітчів, 1 = звичайно, 2 = сильно
+var SAFE_W = 1760;         // ширина сцени, яка гарантовано влазить в екран (з 1920)
+var SAFE_H = 1080;         // висота сцени, яка гарантовано влазить в екран
+
+// МУЗИКА: пряме посилання на файл .ogg (YouTube та .mp3 у браузері гри не працюють). Порожньо = без звуку
+var MUSIC_URL = "code_red.ogg";
+var MUSIC_VOLUME = 0.4;    // гучність 0..1
+var MUSIC_FADE = 2500;     // плавне наростання музики на старті, мілісекунд
+
+// ВІТАННЯ: скільки мілісекунд показувати особовий номер гравця перед назвою сервера
+var GREET_TIME = 2200;
+
+// УРИВКИ БОРТОВОГО ЖУРНАЛУ: змінюються під смужкою прогресу
+var LORE_INTERVAL = 6500;  // мілісекунд на один запис
+var LORE = [
+  "ЗАПИС 001: ВИХІД З ГІПЕРПРОСТОРУ ПОЗА РОЗРАХУНКОВОЮ ТОЧКОЮ",
+  "ЗАПИС 004: ЗОРІ НЕ ЗБІГАЮТЬСЯ З ЖОДНОЮ КАРТОЮ РЕСПУБЛІКИ",
+  "ЗАПИС 009: КОРПУС РОЗЛАМАНО НА ТРИ СЕКЦІЇ. НОСОВУ НЕ ЗНАЙДЕНО",
+  "ЗАПИС 013: МАЯК ЛИХА ПРАЦЮЄ. ВІДПОВІДІ НЕМАЄ",
+  "ЗАПИС 017: НІЧ ТУТ ТРИВАЄ ДОВШЕ, НІЖ ПОКАЗУЮТЬ ПРИЛАДИ",
+  "ЗАПИС 022: ПАТРУЛЬ ДОПОВІВ ПРО СПОРУДУ, ЯКОЇ ВЧОРА НЕ БУЛО",
+  "ЗАПИС 026: У РАЦІЇ ЧУТИ ГОЛОСИ. ПОЗИВНІ НЕ З НАШОГО ЕКІПАЖУ",
+  "ЗАПИС 031: КОМПАС ВКАЗУЄ НА ОДНЕ МІСЦЕ, ДЕ Б МИ НЕ СТОЯЛИ",
+  "ЗАПИС 038: ТРОЄ БАЧИЛИ ПОСТАТЬ НА ГРЕБЕНІ. ПРИЛАДИ НІЧОГО НЕ ЗАФІКСУВАЛИ",
+  "ЗАПИС 044: НАКАЗ НЕЗМІННИЙ. ТРИМАТИ ПЕРИМЕТР. ЧЕКАТИ ФЛОТ"
+];
+var LORE_FINAL = "ЛАСКАВО ПРОСИМО НА БОРТ, СОЛДАТЕ";
+
+// РІДКІСНИЙ ЗБІЙ: шанс на одне завантаження (0.05 = приблизно раз на 20 заходів, 0 = вимкнено).
+// Для перевірки додай #anomaly в кінець адреси сторінки
+var ANOMALY_CHANCE = 0.05;
+var ANOMALY_WORDS = ["МИ БАЧИМО ВАС", "ВИ НЕ САМІ", "ПОВЕРНІТЬСЯ"];
+var ANOMALY_LINES = ["НЕВІДОМИЙ КОРИСТУВАЧ УВІЙШОВ У СИСТЕМУ", "ЗАПИС 000: МИ БУЛИ ТУТ ДО ВАС"];
+
+// кольори у форматі "R,G,B"
+var C_WHITE = "244,246,250", C_RED = "192,32,43", C_BLUE = "46,111,224",
+    C_ORANGE = "255,154,31", C_YELLOW = "242,194,48", C_HOLO = "143,216,255";
+// кольори світлових смуг по порядку (перші дві товсті)
+var STREAK_COLORS = [C_RED, C_BLUE, C_BLUE, C_RED, C_HOLO, C_WHITE, C_ORANGE, C_RED, C_BLUE];
+
+var $ = function (id) { return document.getElementById(id); };
+function rnd(a, b) { return a + Math.random() * (b - a); }
+
+// ====== МАСШТАБ ПІД РОЗМІР ЕКРАНА ======
+var scale = 1;
+function layout() {
+  var W = window.innerWidth || document.documentElement.clientWidth;
+  var H = window.innerHeight || document.documentElement.clientHeight;
+  if (!W || !H) { return; }
+  scale = Math.min(W / SAFE_W, H / SAFE_H);
+  var t = "scale(" + scale.toFixed(4) + ")";
+  var st = $("stage");
+  st.style.webkitTransform = t; st.style.transform = t;
+}
+layout();
+window.onresize = layout;
+
+// ====== НАЗВА СЕРВЕРА ======
+var titleText = "";
+var SCRAMBLE = "#$%&/<>[]{}=+*01ABCDEFXZ";
+function fitTitle() {
+  var box = $("titlebox"), t = $("t0"), size = 140;
+  t.style.fontSize = size + "px";
+  while (t.scrollWidth > box.clientWidth && size > 44) {
+    size -= 4; t.style.fontSize = size + "px";
+  }
+  $("t1").style.fontSize = size + "px";
+  $("t2").style.fontSize = size + "px";
+}
+function showTitle(s) { $("t0").textContent = s; $("t1").textContent = s; $("t2").textContent = s; }
+var titleIv = null;
+function setTitle(s) {
+  titleText = String(s).toUpperCase();
+  showTitle(titleText); fitTitle();
+  if (titleIv) { clearInterval(titleIv); }
+  var step = 0, steps = 18;
+  var iv = titleIv = setInterval(function () {
+    step++;
+    var out = "", keep = Math.floor(titleText.length * step / steps);
+    for (var i = 0; i < titleText.length; i++) {
+      var ch = titleText.charAt(i);
+      out += (i < keep || ch === " ") ? ch : SCRAMBLE.charAt(Math.floor(Math.random() * SCRAMBLE.length));
     }
+    showTitle(out);
+    if (step >= steps) { clearInterval(iv); if (titleIv === iv) { titleIv = null; } showTitle(titleText); }
+  }, 45);
+}
 
-    // --- Параметри з URL. ВАЖЛИВО: GMod передає лише %s (SteamID64)
-    // і %m (назва карти) - ІМ'Я гравця так передати не можна, бо
-    // LocalPlayer():Nick() існує лише всередині Lua-рушія, а ця
-    // сторінка - звичайний окремий HTML, доступу до гри не має.
-    // Показуємо SteamID (єдине, що реально прийде), нік - ні.
-    var params = new URLSearchParams(window.location.search);
-    var steamId = params.get('steamid') || params.get('SteamId') || '';
-    var mapParam = params.get('map') || params.get('Map') || '';
-
-    if (steamId) {
-        document.getElementById('playerName').textContent = 'STEAM_' + steamId.slice(-6);
-        document.getElementById('playerSteamId').textContent = steamId;
+// ====== ФОН: ПЛОЩИНА З ДАНИМИ ======
+var CW = 22, CH = 16;                 // розмір клітинки на полотні
+var TILE_C = 15, TILE_R = 15;         // клітинок в одній плитці
+var TILES_X = 6, TILES_Y = 6;         // плиток по ширині й висоті
+var COLS = TILE_C * TILES_X, ROWS = TILE_R * TILES_Y;
+var tiles = [], cx = null;
+(function () {
+  var host = $("data");
+  for (var ty = 0; ty < TILES_Y; ty++) {
+    for (var tx = 0; tx < TILES_X; tx++) {
+      var cvs = document.createElement("canvas");
+      cvs.width = TILE_C * CW; cvs.height = TILE_R * CH;
+      cvs.style.left = (tx * 100 / TILES_X) + "%";
+      cvs.style.top = (ty * 100 / TILES_Y) + "%";
+      host.appendChild(cvs);
+      tiles.push(cvs.getContext("2d"));
     }
-    if (mapParam) {
-        document.getElementById('mapName').textContent = mapParam;
+  }
+})();
+var HEX = "0123456789ABCDEF";
+var FONT_HEX = "12px Consolas, 'Courier New', monospace";
+var SYMBOLS = "glyph";     // "glyph" = намальовані символи, "hex" = шістнадцяткові цифри
+// Символи малюються лініями на сітці 4x4. Кожен символ: список відрізків [x1, y1, x2, y2].
+// Щоб додати свій символ, допиши ще один рядок.
+var GLYPHS = [
+  [[0,0,4,0],[0,4,4,4],[2,0,2,4]],
+  [[0,0,4,0],[0,0,0,4],[0,4,4,4]],
+  [[0,0,4,0],[4,0,4,4],[0,2,4,2]],
+  [[0,0,0,4],[4,0,4,4],[0,4,4,4]],
+  [[0,0,4,0],[0,2,4,2],[0,4,4,4]],
+  [[0,0,4,0],[0,0,2,4],[4,0,2,4]],
+  [[0,4,4,4],[0,4,2,0],[4,4,2,0]],
+  [[0,0,4,0],[4,0,0,4],[0,4,4,4]],
+  [[0,0,0,4],[0,0,4,0],[2,2,4,2]],
+  [[0,0,4,0],[4,0,0,4]],
+  [[0,0,0,4],[0,4,4,0],[4,0,4,4]],
+  [[0,2,4,2],[2,0,2,4]],
+  [[0,0,4,0],[1,0,1,4],[3,0,3,4]],
+  [[0,4,4,4],[1,0,1,4],[3,0,3,4]],
+  [[0,0,4,0],[0,4,4,4],[0,0,0,4],[4,0,4,4],[1.5,2,2.5,2]],
+  [[0,0,2,2],[4,0,2,2],[2,2,2,4]],
+  [[0,0,4,0],[4,0,4,2],[4,2,0,2],[0,2,0,4],[0,4,4,4]],
+  [[0,0,0,4],[0,2,4,0],[0,2,4,4]],
+  [[0,0,4,0],[2,0,2,4],[0,4,1,4],[3,4,4,4]],
+  [[0,1,4,1],[0,3,4,3],[4,1,4,3]],
+  [[0,0,0,2],[0,2,4,2],[4,2,4,4]],
+  [[0,0,4,2],[4,2,0,4]],
+  [[0,0,4,0],[0,4,4,4],[0,0,4,4]],
+  [[0,0,0,4],[0,4,4,4],[4,4,4,2],[2,0,2,2]],
+  [[0,0,4,0],[0,0,0,4],[2,2,4,2],[4,2,4,4]],
+  [[0,2,2,0],[2,0,4,2],[0,2,0,4],[4,2,4,4]],
+  [[0,0,4,0],[0,0,0,4],[0,4,2,4],[4,2,4,4]],
+  [[1,0,3,0],[0,2,4,2],[1,4,3,4]]
+];
+function drawGlyph(x, y) {
+  var g = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+  var s = 2.5;                         // розмір однієї клітинки сітки символу
+  cx.beginPath();
+  for (var i = 0; i < g.length; i++) {
+    cx.moveTo(x + g[i][0] * s, y + g[i][1] * s);
+    cx.lineTo(x + g[i][2] * s, y + g[i][3] * s);
+  }
+  cx.stroke();
+}
+function pickColor() {
+  var k = Math.random();
+  if (k < 0.40) { return C_BLUE; }
+  if (k < 0.62) { return C_WHITE; }
+  if (k < 0.82) { return C_RED; }
+  if (k < 0.90) { return C_HOLO; }
+  if (k < 0.96) { return C_ORANGE; }
+  return C_YELLOW;
+}
+function drawCell(c, r) {
+  cx = tiles[Math.floor(r / TILE_R) * TILES_X + Math.floor(c / TILE_C)];
+  var x = (c % TILE_C) * CW, y = (r % TILE_R) * CH;
+  cx.clearRect(x, y, CW, CH);
+  var k = Math.random();
+  if (k < 0.12) { return; }
+  if (k < 0.22) {                      // суцільний блок: синій або червоний
+    cx.fillStyle = "rgba(" + (Math.random() < 0.6 ? C_BLUE : C_RED) + "," + rnd(0.2, 0.7).toFixed(2) + ")";
+    cx.fillRect(x + 1, y + 2, CW - 3, CH - 5);
+    return;
+  }
+  cx.fillStyle = "rgba(" + pickColor() + "," + rnd(0.25, 0.95).toFixed(2) + ")";
+  if (SYMBOLS === "glyph") {
+    cx.strokeStyle = cx.fillStyle;
+    cx.lineWidth = 1.6;
+    cx.lineCap = "square";
+    drawGlyph(x + 6, y + 3);
+  } else {
+    cx.font = FONT_HEX;
+    cx.fillText(HEX.charAt(Math.floor(Math.random() * 16)) + HEX.charAt(Math.floor(Math.random() * 16)), x + 2, y + 12);
+  }
+}
+// ПОЯВА: панель збирається рядок за рядком від горизонту до глядача, потім проявляються написи
+var revealed = 0;
+var revealIv = setInterval(function () {
+  for (var k = 0; k < 3 && revealed < ROWS; k++) {
+    for (var c = 0; c < COLS; c++) { drawCell(c, revealed); }
+    revealed++;
+  }
+  if (revealed >= ROWS) { clearInterval(revealIv); }
+}, 40);
+setTimeout(function () { $("streaks").className = "fade on"; }, 300);
+setTimeout(function () { $("frame").className = "fade on"; }, 900);
+setTimeout(function () { $("onplane").className = "fade on"; }, 1300);
+
+setInterval(function () {
+  // найчастіше оновлюємо нижню частину полотна: вона ближче до глядача і її видно найкраще
+  for (var i = 0; i < 150; i++) {
+    var r = Math.random() < 0.75 ? Math.floor(ROWS * (0.5 + Math.random() * 0.5)) : Math.floor(Math.random() * ROWS);
+    if (r < revealed) { drawCell(Math.floor(Math.random() * COLS), r); }
+  }
+  if (Math.random() < 0.25) {
+    var row = Math.floor(ROWS * (0.5 + Math.random() * 0.5));
+    if (row < revealed) { for (var c = 0; c < COLS; c++) { drawCell(c, row); } }
+  }
+}, 70);
+
+// ====== СВІТЛОВІ СМУГИ ТА ПОДРЯПИНИ (у відсотках екрана) ======
+var streaks = [];
+(function () {
+  var host = $("streaks");
+  for (var i = 0; i < STREAK_COLORS.length; i++) {
+    var d = document.createElement("div"), col = STREAK_COLORS[i];
+    d.className = "streak";
+    var thick = i < 2;
+    var s = { el: d, top: rnd(5, 92), h: thick ? rnd(2.2, 4) : rnd(0.2, 0.8), x: rnd(-30, 30), v: rnd(-0.5, 0.5), base: thick ? 0.8 : 0.65 };
+    d.style.top = s.top + "%"; d.style.height = s.h + "%";
+    var g = "rgba(" + col + ",0), rgba(" + col + ",.95) 30%, rgba(255,255,255,.95) 50%, rgba(" + col + ",.95) 70%, rgba(" + col + ",0))";
+    d.style.background = "-webkit-linear-gradient(left, " + g;
+    d.style.background = "linear-gradient(to right, " + g;
+    d.style.boxShadow = "0 0 22px 6px rgba(" + col + ",.6)";
+    host.appendChild(d); streaks.push(s);
+  }
+  for (var j = 0; j < 14; j++) {
+    var sc = document.createElement("div");
+    sc.className = "scratch";
+    sc.style.left = rnd(0, 90) + "%"; sc.style.top = rnd(0, 100) + "%";
+    sc.style.width = rnd(3, 16) + "%"; sc.style.opacity = rnd(0.15, 0.6).toFixed(2);
+    var rot = "rotate(" + rnd(-70, -20).toFixed(1) + "deg)";
+    sc.style.webkitTransform = rot; sc.style.transform = rot;
+    host.appendChild(sc);
+  }
+})();
+setInterval(function () {
+  for (var i = 0; i < streaks.length; i++) {
+    var s = streaks[i];
+    s.x += s.v;
+    if (finished) {                      // фінал: смуги розлітаються і гаснуть
+      s.v *= 1.12; s.base *= 0.95;
+      if (Math.abs(s.v) < 0.3) { s.v = s.v < 0 ? -0.3 : 0.3; }
+    } else {
+      if (s.x > 35 || s.x < -35) { s.v = -s.v; }
+      if (Math.random() < 0.004 * (1 + GLITCH_POWER)) { s.top = rnd(5, 92); s.el.style.top = s.top + "%"; }
     }
+    s.el.style.left = (-20 + s.x) + "%";
+    s.el.style.opacity = (s.base * rnd(0.55, 1)).toFixed(2);
+  }
+}, 50);
 
-    // --- Термінальний лог - послідовна анімація рядків ---
-    var logLines = [
-        ['HANDSHAKE', 'OK'],
-        ['AUTH / STEAM SESSION', 'OK'],
-        ['WORKSHOP CONTENT', 'LOADING'],
-        ['GAMEMODE STAR WARS RP', 'MOUNTED'],
-        ['SPAWN POINT', 'RESERVED'],
-        ['CHARACTER DATA', 'SYNCING'],
-        ['WORLD STREAM', 'ACTIVE'],
-    ];
-    var termEl = document.getElementById('terminal');
-    logLines.forEach(function (item, idx) {
-        var row = document.createElement('div');
-        row.className = 'line';
-        row.style.animationDelay = (0.3 + idx * 0.22) + 's';
-        row.innerHTML = '<span>&gt; ' + item[0] + '</span><span class="ok">[' + item[1] + ']</span>';
-        termEl.appendChild(row);
-    });
+// ====== ГЛІТЧ ======
+function clipRect(el, top, bottom) { el.style.clip = "rect(" + top + "px, 9999px, " + bottom + "px, 0)"; }
+var burst = 0;
+setInterval(function () {
+  if (GLITCH_POWER <= 0) { return; }
+  var t1 = $("t1"), t2 = $("t2"), wrap = $("wrap"), slice = $("slice");
+  if (finished) { burst = 0; }
+  else if (burst <= 0 && Math.random() < 0.035 * GLITCH_POWER) { burst = Math.floor(rnd(3, 9)); }
+  if (burst > 0) {
+    burst--;
+    var h = $("titlebox").clientHeight;
+    var a = rnd(0, h * 0.8), b = rnd(0, h * 0.8);
+    clipRect(t1, a, a + rnd(6, h * 0.35));
+    clipRect(t2, b, b + rnd(6, h * 0.35));
+    t1.style.opacity = 1; t2.style.opacity = 1;
+    t1.style.left = rnd(-18, 18) * GLITCH_POWER + "px"; t1.style.right = "auto"; t1.style.width = "100%";
+    t2.style.left = rnd(-18, 18) * GLITCH_POWER + "px"; t2.style.right = "auto"; t2.style.width = "100%";
+    wrap.style.left = (Math.random() < 0.4 ? rnd(-6, 6) * GLITCH_POWER * scale : 0) + "px";
+    slice.style.top = rnd(0, 95) + "%"; slice.style.height = rnd(0.3, 5) + "%";
+    slice.style.background = "rgba(" + (Math.random() < 0.5 ? C_BLUE : C_RED) + ",.22)";
+  } else {
+    t1.style.opacity = 0; t2.style.opacity = 0;
+    wrap.style.left = "0px"; slice.style.height = "0";
+  }
+}, 60);
 
-    // --- Прогрес: справжні дані від GMod, якщо є, інакше плавна
-    // імітація (щоб екран не виглядав "зламаним", якщо колбеки
-    // з якоїсь причини не прийдуть).
-    var filesTotal = 0, filesDone = 0;
-    var fillEl = document.getElementById('progressFill');
-    var textEl = document.getElementById('statusText');
-    var pctEl = document.getElementById('statusPct');
+// ====== СТРІЧКА ПОДІЙ ======
+function feed(text) {
+  var f = $("feed"), d = document.createElement("div");
+  d.textContent = "> " + text;
+  f.appendChild(d);
+  while (f.childNodes.length > FEED_LINES) { f.removeChild(f.firstChild); }
+}
 
-    function setProgress(pct, text) {
-        pct = Math.max(0, Math.min(100, pct));
-        fillEl.style.width = pct + '%';
-        pctEl.textContent = Math.round(pct) + '%';
-        if (text) textEl.textContent = text;
+// ====== ПРОГРЕС ======
+var total = 0, needed = 0, target = 0, shown = 0, finished = false;
+function setTarget(p) { if (p > 100) { p = 100; } if (p > target) { target = p; } }
+function recalcFiles() {
+  if (total > 0) {
+    var done = total - needed; if (done < 0) { done = 0; }
+    setTarget(10 + 85 * (done / total));
+    $("count").textContent = "ФАЙЛИ " + done + " / " + total;
+  }
+}
+setInterval(function () {
+  shown += (target - shown) * 0.12;
+  if (target - shown < 0.05) { shown = target; }
+  $("fill").style.width = shown.toFixed(2) + "%";
+  $("head").style.left = shown.toFixed(2) + "%";
+  var moving = target - shown > 0.6;
+  $("pct").textContent = (moving ? Math.min(99, Math.round(shown + Math.random() * 3)) : Math.round(shown)) + "%";
+  if (!finished && shown >= 100) { finale(); }
+}, 40);
+
+// ====== ФІНАЛ: завантаження завершено ======
+function finale() {
+  finished = true;
+  var fl = $("flash");
+  fl.style.opacity = 0.85;
+  setTimeout(function () {
+    fl.style.webkitTransition = "opacity 1.4s"; fl.style.transition = "opacity 1.4s";
+    fl.style.opacity = 0;
+  }, 60);
+  var btn = $("btn");
+  btn.innerHTML = 'ДОСТУП НАДАНО <span id="pct">100%</span>';
+  btn.style.borderColor = "#8fd8ff"; btn.style.color = "#8fd8ff";
+  $("pct").style.background = "#2e6fe0";
+  $("fill").style.boxShadow = "0 0 18px 4px rgba(143,216,255,.95)";
+  loreStop = true;
+  $("lore").textContent = LORE_FINAL;
+}
+
+// ====== УРИВКИ БОРТОВОГО ЖУРНАЛУ ======
+var loreStop = false, loreIdx = Math.floor(Math.random() * LORE.length), loreTyping = null;
+function nextLore() {
+  if (loreStop || !LORE.length) { return; }
+  var text = LORE[loreIdx % LORE.length], pos = 0;
+  loreIdx++;
+  if (loreTyping) { clearInterval(loreTyping); }
+  loreTyping = setInterval(function () {
+    if (loreStop) { clearInterval(loreTyping); return; }
+    pos += 2;
+    $("lore").textContent = text.substr(0, pos) + (pos < text.length ? "_" : "");
+    if (pos >= text.length) { clearInterval(loreTyping); }
+  }, 25);
+}
+setTimeout(function () { nextLore(); setInterval(nextLore, LORE_INTERVAL); }, 2600);
+
+// ====== РІДКІСНИЙ ЗБІЙ ======
+function anomaly() {
+  if (finished) { return; }
+  var wrap = $("wrap"), oldLabel = $("label").textContent;
+  var f = "hue-rotate(115deg) saturate(1.9) contrast(1.15)";
+  wrap.style.webkitFilter = f; wrap.style.filter = f;
+  if (titleIv) { clearInterval(titleIv); titleIv = null; }
+  showTitle(ANOMALY_WORDS[Math.floor(Math.random() * ANOMALY_WORDS.length)]); fitTitle();
+  $("label").textContent = "- - -";
+  feed(ANOMALY_LINES[Math.floor(Math.random() * ANOMALY_LINES.length)]);
+  burst = 22;
+  setTimeout(function () {
+    wrap.style.webkitFilter = "none"; wrap.style.filter = "none";
+    $("label").textContent = oldLabel;
+    showTitle(titleText); fitTitle();
+  }, 1300);
+}
+var anomalyForced = String(window.location.hash).indexOf("anomaly") !== -1;
+if (anomalyForced || Math.random() < ANOMALY_CHANCE) {
+  setTimeout(anomaly, anomalyForced ? 6000 : rnd(6000, 12000));
+}
+
+// ====== МУЗИКА ======
+var music = null, gameVol = 1;
+if (MUSIC_URL) {
+  try {
+    music = new Audio(MUSIC_URL);
+    music.loop = true; music.volume = 0;
+    var musicFade = 0;                   // 0..1, плавне наростання
+    var mfIv = setInterval(function () {
+      musicFade = Math.min(1, musicFade + 100 / Math.max(100, MUSIC_FADE));
+      music.volume = MUSIC_VOLUME * gameVol * musicFade;
+      if (musicFade >= 1) { clearInterval(mfIv); }
+    }, 100);
+    var playMusic = function () {
+      var pr = music.play();
+      if (pr && pr["catch"]) { pr["catch"](function () {}); }
+    };
+    playMusic();
+    // у звичайному браузері музика стартує після першого дотику чи кліку
+    var unlockMusic = function () { if (music && music.paused) { playMusic(); } };
+    document.addEventListener("click", unlockMusic, false);
+    document.addEventListener("touchstart", unlockMusic, false);
+  } catch (e) { music = null; }
+}
+
+// ====== ГОДИННИК ======
+var t0 = new Date().getTime();
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+setInterval(function () {
+  var s = Math.floor((new Date().getTime() - t0) / 1000);
+  $("clock").textContent = pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
+}, 500);
+
+// ====== ПЕРЕКЛАД СТАТУСІВ ГРИ ======
+var STATUS = [
+  ["retrieving server info", "ЗАПИТ ДАНИХ ГОЛОВНОГО КОМП'ЮТЕРА", 4],
+  ["getting addon info",     "ЗЧИТУВАННЯ ПЕРЕЛІКУ МОДУЛІВ", 6],
+  ["workshop complete",      "АРХІВИ ВІДНОВЛЕНО", 60],
+  ["workshop",               "ВІДНОВЛЕННЯ АРХІВІВ", 8],
+  ["mounting",               "ПІДКЛЮЧЕННЯ МОДУЛІВ", 70],
+  ["parsing game info",      "АНАЛІЗ СТАНУ КОРАБЛЯ", 78],
+  ["starting lua",           "ЗАПУСК БОРТОВИХ СИСТЕМ", 90],
+  ["lua started",            "БОРТОВІ СИСТЕМИ АКТИВНІ", 94],
+  ["sending client info",    "ПЕРЕДАЧА ОСОБОВОГО НОМЕРА", 97],
+  ["client info sent",       "ДОСТУП НАДАНО", 100]
+];
+
+// ====== ВІТАННЯ: спершу особовий номер гравця, потім назва сервера ======
+var greetTimer = null;
+function greet(servername, steamid) {
+  if (greetTimer) { clearTimeout(greetTimer); greetTimer = null; }
+  function showServer() {
+    $("label").textContent = "ПІДКЛЮЧЕННЯ ДО";
+    if (servername) { setTitle(servername); }
+  }
+  if (steamid && GREET_TIME > 0) {
+    $("label").textContent = "ОСОБОВИЙ НОМЕР ПІДТВЕРДЖЕНО";
+    setTitle(steamid);
+    feed("ОСОБОВИЙ НОМЕР " + steamid + " ПІДТВЕРДЖЕНО");
+    greetTimer = setTimeout(showServer, GREET_TIME);
+  } else { showServer(); }
+}
+
+// ====== ФУНКЦІЇ, ЯКІ ВИКЛИКАЄ GARRY'S MOD ======
+var gotGame = false, demoTimer = null;
+
+function GameDetails(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume) {
+  if (!gotGame && demoTimer) { stopDemo(); }
+  gotGame = true;
+  greet(servername, steamid);
+  if (typeof volume === "number") {      // гучність із налаштувань гри
+    gameVol = Math.max(0, Math.min(1, volume));
+    if (music && music.volume > 0) { music.volume = MUSIC_VOLUME * gameVol; }
+  }
+  if (mapname)    { $("map").textContent = String(mapname).toUpperCase(); }
+  if (maxplayers) { $("slots").textContent = "ДО " + maxplayers; }
+  if (steamid)    { $("sid").textContent = steamid; }
+  feed("КАНАЛ ЗВ'ЯЗКУ ВСТАНОВЛЕНО");
+  setTarget(3);
+}
+var neededSet = false;   // поки гра не сказала, скільки файлів лишилось, вважаємо, що всі
+function SetFilesTotal(n)  { total = parseInt(n, 10) || 0; if (!neededSet || needed > total) { needed = total; } recalcFiles(); }
+function SetFilesNeeded(n) { needed = parseInt(n, 10) || 0; neededSet = true; recalcFiles(); }
+function DownloadingFile(name) {
+  name = String(name || "");
+  $("file").textContent = name;
+  feed("ОТРИМАНО " + name);
+}
+function SetStatusChanged(status) {
+  status = String(status || "");
+  var low = status.toLowerCase(), text = status.toUpperCase();
+  for (var i = 0; i < STATUS.length; i++) {
+    if (low.indexOf(STATUS[i][0]) !== -1) {
+      text = STATUS[i][1];
+      if (total === 0 || STATUS[i][2] >= 60) { setTarget(STATUS[i][2]); }
+      break;
     }
+  }
+  var m = low.match(/(\d+)\s*\/\s*(\d+)/);
+  if (m && parseInt(m[2], 10) > 0) {
+    setTarget(8 + 52 * (parseInt(m[1], 10) / parseInt(m[2], 10)));
+    $("count").textContent = "АРХІВИ " + m[1] + " / " + m[2];
+  }
+  $("file").textContent = text;
+  feed(text);
+}
 
-    // --- Офіційні колбеки GMod (викликаються рушієм напряму) ---
-    window.GameDetails = function (servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
-        document.getElementById('mapName').textContent = mapname || '-';
-        document.getElementById('maxPlayers').textContent = maxplayers || '-';
-        document.getElementById('serverAddr').textContent = servername || '';
-        if (steamid) {
-            document.getElementById('playerName').textContent = 'STEAM_' + String(steamid).slice(-6);
-            document.getElementById('playerSteamId').textContent = steamid;
-        }
-        setProgress(5, 'З\'єднання встановлено...');
-    };
+// ====== СТАРТ ======
+showTitle(DEFAULT_TITLE); fitTitle();
+feed("АВАРІЙНЕ ЖИВЛЕННЯ АКТИВОВАНО");
+feed("КООРДИНАТИ НЕ ВИЗНАЧЕНО");
 
-    window.SetFilesTotal = function (total) {
-        filesTotal = total || 0;
-        filesDone = 0;
-        setProgress(filesTotal > 0 ? 5 : 30, 'Завантаження файлів: 0 / ' + filesTotal);
-    };
-
-    window.DownloadingFile = function (filename) {
-        textEl.textContent = 'Завантаження: ' + filename;
-    };
-
-    window.FileDownloaded = function () {
-        filesDone++;
-        if (filesTotal > 0) {
-            var pct = 5 + (filesDone / filesTotal) * 90;
-            setProgress(pct, 'Завантаження файлів: ' + filesDone + ' / ' + filesTotal);
-        }
-    };
-
-    // --- Фолбек-анімація (на випадок відсутності реальних колбеків -
-    // напр. якщо всі файли вже завантажені і GMod їх не викликає) ---
-    var fakeProgress = 0;
-    var fakeInterval = setInterval(function () {
-        if (filesTotal > 0) { clearInterval(fakeInterval); return; } // реальні дані вже йдуть
-        fakeProgress += Math.random() * 6;
-        if (fakeProgress >= 96) { fakeProgress = 96; clearInterval(fakeInterval); }
-        setProgress(fakeProgress, 'Синхронізація світу...');
-    }, 260);
+// ====== ДЕМО: якщо сторінку відкрито у звичайному браузері ======
+function stopDemo() {
+  clearInterval(demoTimer); demoTimer = null;
+  total = 0; needed = 0; target = 0; shown = 0; neededSet = false;
+  $("count").textContent = "";
+}
+setTimeout(function () {
+  if (gotGame) { return; }
+  greet("Назва сервера", "76561198000000000");
+  $("map").textContent = "RP_UNKNOWN_PLANET";
+  $("slots").textContent = "ДО 64";
+  $("sid").textContent = "76561198000000000";
+  var files = ["models/venator/hull_section_04.mdl", "materials/venator/bridge_console.vtf",
+               "sound/ambient/reactor_hum.wav", "lua/autorun/systems_init.lua",
+               "models/clone/phase2_trooper.mdl", "materials/planet/unknown_sky.vtf"];
+  var demoNeeded = 40;
+  SetFilesTotal(40); SetFilesNeeded(40);
+  demoTimer = setInterval(function () {
+    demoNeeded--;
+    DownloadingFile(files[demoNeeded % files.length]);
+    SetFilesNeeded(demoNeeded);
+    if (demoNeeded <= 0) {
+      clearInterval(demoTimer); demoTimer = null;
+      SetStatusChanged("Starting Lua...");
+      setTimeout(function () { SetStatusChanged("Sending client info..."); }, 900);
+      setTimeout(function () { SetStatusChanged("Client info sent!"); }, 1800);
+    }
+  }, 280);
+}, 2500);
 </script>
-
 </body>
 </html>
